@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decentralized File Storage</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1> Decentralized File Storage System</h1>
+    <p>Upload, search, and download files using content hashes.</p>
+  </header>
+
+  <main>
+    <section class="upload">
+      <h2>Upload File</h2>
+      <input type="file" id="fileInput" />
+      <button onclick="uploadFile()">Upload</button>
+      <p id="uploadStatus"></p>
+    </section>
+
+    <section class="files">
+      <h2>Stored Files</h2>
+      <button onclick="fetchFiles()">Refresh List</button>
+      <ul id="fileList"></ul>
+    </section>
+
+    <section class="search">
+      <h2>Search File by Hash</h2>
+      <input id="hashInput" placeholder="Enter content hash" />
+      <button onclick="searchByHash()">Search</button>
+      <p id="searchResult"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>A lightweight simulation of IPFS/Filecoin storage</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
