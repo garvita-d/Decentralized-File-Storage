@@ -4,19 +4,24 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
+
 from .routing import RoutingTable, Contact
 from .id import random_node_id
 from ..common.hashing import sha256_hex
+
 
 class StoreBody(BaseModel):
     key: str
     value: Any
 
+
 class FindNodeBody(BaseModel):
     target: str
 
+
 class FindValueBody(BaseModel):
     key: str
+
 
 class DHTNode:
     def __init__(self, host: str, port: int, bootstrap: List[Dict[str, Any]]):
@@ -84,3 +89,42 @@ class DHTNode:
             return Response(content=data, media_type="application/octet-stream")
 
         return app
+
+
+# ✅ Simple wrapper for orchestrator imports
+class DHTServer:
+    """Wrapper to run a simple DHT HTTP server compatible with orchestrator."""
+
+    def __init__(self, host="127.0.0.1", port=8000):
+        self.host = host
+        self.port = port
+        self.app = FastAPI()
+
+        # In-memory store: chunk_hash -> node_addr
+        self.DHT_STORAGE: Dict[str, str] = {}
+
+        @self.app.post("/register")
+        def register_chunk(req: Dict[str, Any]):
+            chunk_hash = req.get("chunk_hash")
+            node_addr = req.get("node_addr")
+            if not chunk_hash or not node_addr:
+                raise HTTPException(400, "Missing fields")
+            self.DHT_STORAGE[chunk_hash] = node_addr
+            print(f"[DHTServer] Registered {chunk_hash[:8]}... → {node_addr}")
+            return {"status": "ok"}
+
+        @self.app.get("/lookup/{chunk_hash}")
+        def lookup_chunk(chunk_hash: str):
+            node_addr = self.DHT_STORAGE.get(chunk_hash)
+            if not node_addr:
+                raise HTTPException(404, "Chunk not found")
+            print(f"[DHTServer] Found {chunk_hash[:8]}... at {node_addr}")
+            return {"node_addr": node_addr}
+# ✅ Define a global FastAPI app for uvicorn
+server = DHTServer()
+server_app = server.app
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("src.dht.server:server_app", host="127.0.0.1", port=8000, reload=True)
+
