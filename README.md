@@ -110,13 +110,13 @@ This decentralized file storage system distributes files across multiple nodes w
 ## 📸 Screenshots
 
 ### Main Interface
-![Main Interface](D:\Decentralized-File-Storage\image1.png)
+![Main Interface](images/image1.png)
 
 ### File Upload
-![File Upload](D:\Decentralized-File-Storage\image1.png)
+![File Upload](images/image1.png)
 
 ### File List
-![File List](D:\Decentralized-File-Storage\image.png)
+![File List](images/image.png)
 
 ---
 
