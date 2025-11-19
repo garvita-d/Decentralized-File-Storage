@@ -2,36 +2,7 @@
 <html>
 <head>
     <title>Decentralized File Storage</title>
-    <style>
-        body {
-            font-family: Arial; 
-            padding: 20px; 
-            background: #f2f2f2;
-        }
-        .container {
-            background: white; 
-            padding: 20px; 
-            width: 400px; 
-            margin: auto; 
-            border-radius: 10px;
-        }
-        button {
-            padding: 10px 15px; 
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        input {
-            padding: 8px;
-            width: 100%;
-        }
-        .cid-box {
-            margin-top: 10px;
-            background: #eee;
-            padding: 10px;
-            border-radius: 5px;
-            word-wrap: break-word;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -53,34 +24,6 @@
     <button onclick="downloadFile()">Download</button>
 </div>
 
-<script>
-    const backend = "http://127.0.0.1:8000";
-
-    async function uploadFile() {
-        let file = document.getElementById("fileInput").files[0];
-        if (!file) return alert("Select a file first!");
-
-        let formData = new FormData();
-        formData.append("file", file);
-
-        let res = await fetch(`${backend}/upload`, {
-            method: "POST",
-            body: formData
-        });
-
-        let data = await res.json();
-        document.getElementById("uploadResult").innerHTML =
-            `Uploaded!<br>Filename: ${data.filename}<br>CID: <b>${data.cid}</b>`;
-    }
-
-    async function downloadFile() {
-        let cid = document.getElementById("cid").value.trim();
-        if (!cid) return alert("Enter a CID");
-
-        window.location.href = `${backend}/download/${cid}`;
-    }
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
-
