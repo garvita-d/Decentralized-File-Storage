@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decentralized File Storage System</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .upload-area {
+      border: 3px dashed #667eea;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9ff;
+    }
+
+    .upload-area:hover {
+      border-color: #764ba2;
+      background: #f0f2ff;
+      transform: translateY(-2px);
+    }
+
+    .upload-area.dragging {
+      border-color: #764ba2;
+      background: #e8eaff;
+    }
+
+    input[type="file"] { display: none; }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+      display: block;
+    }
+
+    .file-list { display: grid; gap: 15px; }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+      border: 1px solid #e0e7ff;
+      transition: all 0.3s ease;
+    }
+
+    .file-item:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .file-info { flex: 1; }
+
+    .file-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+
+    .file-hash {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+      color: #666;
+      word-break: break-all;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      max-width: 600px;
+    }
+
+    .file-meta {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .file-actions { display: flex; gap: 10px; }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 12px 20px;
+      border: 2px solid #e0e7ff;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e7ff;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .node-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .node-card {
+      background: #f8f9ff;
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid #e0e7ff;
+      text-align: center;
+    }
+
+    .node-card.online { border-color: #10b981; }
+    .node-card.offline {
+      border-color: #ef4444;
+      opacity: 0.6;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .status-dot.online {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline { background: #ef4444; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌐 Decentralized File Storage</h1>
+      <p>Store and retrieve files across a distributed network with content addressing</p>
+    </header>
+
+    <!-- Node Status -->
+    <div class="card">
+      <h2>🖥️ Network Nodes</h2>
+      <div class="node-status" id="nodeStatus">
+        <div class="node-card">
+          <div><span class="status-dot"></span>Checking...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="card">
+      <h2>☁️ Upload File</h2>
+      <div class="upload-area" id="uploadArea">
+        <svg width="60" height="60" fill="none" stroke="#667eea" viewBox="0 0 24 24" style="margin: 0 auto 15px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <p style="font-size: 1.1em; margin-bottom: 10px;">Drag & drop your file here</p>
+        <p style="color: #666; margin-bottom: 15px;">or</p>
+        <button type="button" onclick="document.getElementById('fileInput').click()">
+          Choose File
+        </button>
+        <input type="file" id="fileInput">
+      </div>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div id="uploadStatus" class="status"></div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card">
+      <h2>🔍 Search by Content Hash</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter full file hash to retrieve...">
+        <button onclick="searchFile()">Search</button>
+      </div>
+      <div id="searchStatus" class="status"></div>
+    </div>
+
+    <!-- File List -->
+    <div class="card">
+      <h2>💾 Stored Files</h2>
+      <div class="file-list" id="fileList">
+        <div class="empty-state">
+          <p>Loading files...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://127.0.0.1:8080/api';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkNodeStatus();
+      loadFiles();
+      setupDragAndDrop();
+      setInterval(checkNodeStatus, 10000);
+      setInterval(loadFiles, 15000);
+    });
+
+    // Drag and drop
+    function setupDragAndDrop() {
+      const uploadArea = document.getElementById('uploadArea');
+      
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => {
+          uploadArea.classList.add('dragging');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, () => {
+          uploadArea.classList.remove('dragging');
+        }, false);
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFileUpload(files[0]);
+      }, false);
+
+      document.getElementById('fileInput').addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFileUpload(e.target.files[0]);
+      });
+    }
+
+    // Check node status
+    async function checkNodeStatus() {
+      try {
+        const response = await fetch(`${API_URL}/nodes`);
+        const data = await response.json();
+        
+        const statusHtml = data.nodes.map(node => `
+          <div class="node-card ${node.status}">
+            <div><span class="status-dot ${node.status}"></span>${node.name}</div>
+            <div style="font-size: 0.9em; color: #666; margin-top: 8px;">Port ${node.port}</div>
+          </div>
+        `).join('');
+        
+        document.getElementById('nodeStatus').innerHTML = statusHtml;
+      } catch (error) {
+        console.error('Error checking nodes:', error);
+        document.getElementById('nodeStatus').innerHTML = `
+          <div class="node-card offline">
+            <div><span class="status-dot offline"></span>Unable to connect</div>
+            <div style="font-size: 0.9em; color: #666; margin-top: 8px;">Check API server</div>
+          </div>
+        `;
+      }
+    }
+
+    // File upload
+    async function handleFileUpload(file) {
+      const statusDiv = document.getElementById('uploadStatus');
+      const progressBar = document.getElementById('progressBar');
+      const progressFill = document.getElementById('progressFill');
+      
+      statusDiv.className = 'status info';
+      statusDiv.textContent = `Uploading ${file.name}...`;
+      progressBar.style.display = 'block';
+      progressFill.style.width = '50%';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Upload failed');
+        }
+        
+        const data = await response.json();
+        progressFill.style.width = '100%';
+        
+        setTimeout(() => {
+          statusDiv.className = 'status success';
+          statusDiv.innerHTML = `
+            ✅ File uploaded successfully!<br>
+            <strong>File Hash:</strong> <code style="word-break: break-all; display: block; margin-top: 5px;">${data.hash}</code><br>
+            <strong>Chunks:</strong> ${data.chunks}
+          `;
+          progressBar.style.display = 'none';
+          progressFill.style.width = '0%';
+          loadFiles();
+          document.getElementById('fileInput').value = '';
+        }, 500);
+        
+      } catch (error) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = `❌ Upload failed: ${error.message}`;
+        progressBar.style.display = 'none';
+        progressFill.style.width = '0%';
+      }
+    }
+
+    // Load files
+    async function loadFiles() {
+      try {
+        const response = await fetch(`${API_URL}/files`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch files');
+        }
+        
+        const data = await response.json();
+        const fileList = document.getElementById('fileList');
+        
+        console.log('Files loaded:', data); // Debug log
+        
+        if (!data.files || data.files.length === 0) {
+          fileList.innerHTML = `
+            <div class="empty-state">
+              <p>No files uploaded yet</p>
+              <p style="font-size: 0.9em; margin-top: 10px;">Upload a file to get started</p>
+            </div>
+          `;
+          return;
+        }
+
+        fileList.innerHTML = data.files.map(file => `
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-name">📄 ${file.name}</div>
+              <div class="file-meta">
+                <span>📦 ${file.chunks} chunks</span>
+                <span>💾 ${formatBytes(file.size)}</span>
+              </div>
+              <div class="file-hash">Hash: ${file.hash}</div>
+            </div>
+            <div class="file-actions">
+              <button class="btn-small" onclick="downloadFile('${file.name}')">
+                Download
+              </button>
+              <button class="btn-small btn-secondary" onclick="copyHash('${file.hash}')">
+                Copy Hash
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading files:', error);
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = `
+          <div class="empty-state" style="color: #ef4444;">
+            <p>❌ Error loading files</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Make sure the API server is running on port 8080</p>
+          </div>
+        `;
+      }
+    }
+
+    // Search file
+    async function searchFile() {
+      const hash = document.getElementById('searchInput').value.trim();
+      const statusDiv = document.getElementById('searchStatus');
+      
+      if (!hash) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = '⚠️ Please enter a file hash';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/search/${hash}`);
+        const data = await response.json();
+        
+        if (data.found) {
+          statusDiv.className = 'status success';
+          statusDiv.innerHTML = `
+            ✅ File found!<br>
+            <strong>Name:</strong> ${data.file.name}<br>
+            <strong>Size:</strong> ${formatBytes(data.file.size)}<br>
+            <strong>Chunks:</strong> ${data.file.chunks}
+          `;
+        } else {
+          statusDiv.className = 'status error';
+          statusDiv.textContent = '❌ File not found in the network';
+        }
+      } catch (error) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = '❌ Search failed: ' + error.message;
+      }
+    }
+
+    // Download file
+    function downloadFile(filename) {
+      window.open(`${API_URL}/download/${filename}`, '_blank');
+    }
+
+    // Copy hash
+    function copyHash(hash) {
+      navigator.clipboard.writeText(hash).then(() => {
+        alert('✅ Hash copied to clipboard!\n\n' + hash);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = hash;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('✅ Hash copied to clipboard!\n\n' + hash);
+      });
+    }
+
+    // Format bytes
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
